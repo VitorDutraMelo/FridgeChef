@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  recipes Recipe[]
+}
+
+model Recipe {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  prepTime     String
+  difficulty   String
+  servings     Int
+  instructions String[]
+  country      String
+  imageUrl     String?
+  categoryId   String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  category          Category           @relation(fields: [categoryId], references: [id])
+  recipeIngredients RecipeIngredient[]
+  products          Product[]
+  generations       RecipeGeneration[]
+}
+
+model Ingredient {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipeIngredients RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id           String  @id @default(uuid())
+  recipeId     String
+  ingredientId String
+  quantity     String?
+  unit         String?
+  isOptional   Boolean @default(false)
+
+  recipe     Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeId, ingredientId])
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  affiliateUrl String
+  imageUrl     String?
+  price        Float?
+  currency     String   @default("GBP")
+  recipeId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+}
+
+model RecipeGeneration {
+  id               String   @id @default(uuid())
+  inputIngredients String[]
+  country          String
+  matchedRecipeId  String?
+  createdAt        DateTime @default(now())
+
+  matchedRecipe Recipe? @relation(fields: [matchedRecipeId], references: [id], onDelete: SetNull)
+}
